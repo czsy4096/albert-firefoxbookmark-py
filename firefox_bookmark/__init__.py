@@ -13,7 +13,7 @@ from collections import namedtuple
 
 
 md_iid = "0.5"
-md_version = "0.1"
+md_version = "0.2"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
