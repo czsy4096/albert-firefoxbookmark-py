@@ -45,12 +45,7 @@ class FirefoxBookMarks:
         # favicon使用を設定している場合はfavicons.sqliteもコピーする
         if cfav == "1":
             copyfile(self.get_favicons_db(cdir), self.temp_favicondb_path)
-
-        # favicon不使用の場合はダミーデータベースをコピーする
-        else:
-            dfile = str(Path(__file__).resolve().parent) + "/favicons-dummy.sqlite"
-            copyfile(dfile, self.temp_favicondb_path)
-        
+ 
         return None
 
     def get_db_dir(self, cdir) -> Path:
@@ -107,22 +102,30 @@ class FirefoxBookMarks:
         with closing(sqlite3.connect(str(self.temp_maindb_path))) as self.conn:
             cur = self.conn.cursor()
 
-            query1 = 'ATTACH DATABASE "' + str(self.temp_favicondb_path) + '" AS favicons'
-            cur.execute(query1)
-            cur.execute(
-                'SELECT bookmark.title, place.url, keywords.keyword, icon.data AS icondata '
-                'FROM main.moz_bookmarks AS bookmark '
-                'INNER JOIN main.moz_places AS place ON (bookmark.fk = place.id) '
-                'LEFT JOIN main.moz_keywords AS keywords ON (place.id = keywords.place_id) '
-                'LEFT JOIN favicons.moz_pages_w_icons AS iconpage ON (place.url = iconpage.page_url) '
-                'LEFT JOIN favicons.moz_icons_to_pages AS iconid ON (iconpage.id = iconid.page_id) '
-                'LEFT JOIN favicons.moz_icons AS icon ON (iconid.icon_id = icon.id) '
-                'WHERE bookmark.type = 1 '
-                'AND place.url NOT LIKE "place:%" '
-                'GROUP BY place.url '
-                'ORDER BY place.last_visit_date DESC, bookmark.id ASC'
-            )
+            if self.temp_favicondb_path.exists():
+                cur.execute(f'ATTACH DATABASE "{str(self.temp_favicondb_path)}" AS favicons')
+                cur.execute('SELECT bookmark.title, place.url, keywords.keyword, icon.data AS icondata '
+                            'FROM main.moz_bookmarks AS bookmark '
+                            'INNER JOIN main.moz_places AS place ON (bookmark.fk = place.id) '
+                            'LEFT JOIN main.moz_keywords AS keywords ON (place.id = keywords.place_id) '
+                            'LEFT JOIN favicons.moz_pages_w_icons AS iconpage ON (place.url = iconpage.page_url) '
+                            'LEFT JOIN favicons.moz_icons_to_pages AS iconid ON (iconpage.id = iconid.page_id) '
+                            'LEFT JOIN favicons.moz_icons AS icon ON (iconid.icon_id = icon.id) '
+                            'WHERE bookmark.type = 1 '
+                            'AND place.url NOT LIKE "place:%" '
+                            'GROUP BY place.url '
+                            'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
 
+            else:
+                cur.execute('SELECT bookmark.title, place.url, keywords.keyword '
+                            'FROM moz_bookmarks AS bookmark '
+                            'INNER JOIN moz_places AS place ON (bookmark.fk = place.id) '
+                            'LEFT JOIN moz_keywords AS keywords ON (place.id = keywords.place_id) '
+                            'WHERE bookmark.type = 1 '
+                            'AND place.url NOT LIKE "place:%" '
+                            'GROUP BY place.url '
+                            'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
+            
             # ブックマークのデータをnamedtupleのlistとして取得
             namtup = namedtuple("bookmark_item", [field[0] for field in cur.description])
             results = [namtup._make(row) for row in cur]
@@ -183,16 +186,18 @@ class Plugin(QueryHandler):
         firefoxbookmarks = FirefoxBookMarks()
         firefoxbookmarks.fetch_database(self.cdir, self.cfav)
         self.bookmarks_list = firefoxbookmarks.get_bookmark_list()
-        info("Firefox Bookmarks: " + str(len(self.bookmarks_list)) + " items indexed.")
+        info(f"Firefox Bookmarks: {str(len(self.bookmarks_list))} items indexed.")
         firefoxbookmarks.clear_temp_files()
 
         #データベースから読み込んだfaviconを一時ファイルに書き出し
         self.favicon_dir = mkdtemp()
-        for item_num, bookmark_item in enumerate(self.bookmarks_list):
-            if bookmark_item.icondata:
-                ico = open(self.favicon_dir + "/favicon_" + str(item_num), "wb")
-                ico.write(bookmark_item.icondata)
-                ico.close()
+        if self.cfav == "1":
+            for item_num, bookmark_item in enumerate(self.bookmarks_list):
+                if bookmark_item.icondata:
+                    ico = open(self.favicon_dir + "/favicon_" + str(item_num), "wb")
+                    ico.write(bookmark_item.icondata)
+                    ico.close()
+        
 
     def finalize(self):
         """
