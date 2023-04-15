@@ -1,7 +1,8 @@
 # coding: utf-8
 
 """
-Firefoxのブックマークを検索するプラグイン
+Firefoxのブックマークを検索するプラグイン \n
+A plugin to search Firefox bookmarks.
 """
 
 from albert import *
@@ -113,7 +114,7 @@ class FirefoxBookMarks:
                             'LEFT JOIN favicons.moz_icons AS icon ON (iconid.icon_id = icon.id) '
                             'WHERE bookmark.type = 1 '
                             'AND place.url NOT LIKE "place:%" '
-                            'GROUP BY place.url '
+                            'GROUP BY bookmark.title, place.url '
                             'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
 
             else:
@@ -123,7 +124,7 @@ class FirefoxBookMarks:
                             'LEFT JOIN moz_keywords AS keywords ON (place.id = keywords.place_id) '
                             'WHERE bookmark.type = 1 '
                             'AND place.url NOT LIKE "place:%" '
-                            'GROUP BY place.url '
+                            'GROUP BY bookmark.title, place.url '
                             'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
             
             # ブックマークのデータをnamedtupleのlistとして取得
