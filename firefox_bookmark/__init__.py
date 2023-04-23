@@ -26,10 +26,16 @@ MAX_COUNT = 10
 
 
 class FirefoxBookMarks:
-    """BookMarks class for the FireFox browser."""
+    """
+    Firefoxのブックマークを取得するためのクラス
+    BookMarks class for the FireFox browser.
+    """
 
     def __init__(self) -> None:
-        """Create temp file and copy the database to it."""
+        """
+        データベースを複製するための一時ディレクトリを作成しておく
+        Create temp dir/file to copy the databases.
+        """
         
         self.temp_dbdir = Path(mkdtemp())
         self.temp_maindb_path = self.temp_dbdir.joinpath("places.sqlite")
@@ -38,21 +44,31 @@ class FirefoxBookMarks:
         return None
 
     def fetch_database(self, cdir, cfav) -> None:
-        """Fetch database to temp file."""
+        """
+        データベースを一時ディレクトリに複製
+        Fetch database to temp file.
+        """
+        # 現在のFirefoxはFirefox自身が起動している間にデータベースファイルが外部から読み込まれないようになっているため、
+        # 元のデータベースを一時ディレクトリに複製した上でそこからブックマークを読み込みます。
         # Using FireFox63 the DB was locked for exclusive use of FireFox,
         # so we need to create a copy of it to a temp file.
         copyfile(self.get_places_db(cdir), self.temp_maindb_path)
 
         # favicon使用を設定している場合はfavicons.sqliteもコピーする
+        # Also copy favicons.sqlite if you prefer showing favicon
         if cfav == "1":
             copyfile(self.get_favicons_db(cdir), self.temp_favicondb_path)
  
         return None
 
     def get_db_dir(self, cdir) -> Path:
-        """Get bookmarks database path."""
+        """
+        Firefoxのデータベースの場所を探す
+        Get bookmarks database path.
+        """
 
         # 設定ファイルからprofileを読み込む
+        # Read profile path from conf file
         try:
             self.prof = Path(cdir).joinpath("places.sqlite")
         except TypeError:
@@ -61,13 +77,11 @@ class FirefoxBookMarks:
         if self.prof.exists():
             profile_path = Path(cdir)
 
-        # 設定ファイルで設定していない場合はProfile0から読み込む    
+        # 設定ファイルで設定していない場合はProfile0から読み込む 
+        # Fallback to Profile0 if profile_dir is not defined or not exist  
         else:
-            # Firefox folder path
             firefox_path = Path.home().joinpath(".mozilla/firefox")
 
-            # Read Firefox profiles configuration file to get the database file path.
-        
             profiles = RawConfigParser()
             profiles.read(firefox_path.joinpath("profiles.ini"))
             profile_dir = profiles["Profile0"]["Path"]
@@ -83,12 +97,14 @@ class FirefoxBookMarks:
     def get_places_db(self, cdir) -> Path:
         """
         places.sqliteのフルパスを取得する
+        Return full path of places.sqlite
         """
         return self.get_db_dir(cdir).joinpath("places.sqlite")
     
     def get_favicons_db(self, cdir) -> Path:
         """
         favicons.sqliteのフルパスを取得する
+        Return full path of favicons.sqlite
         """
         return self.get_db_dir(cdir).joinpath("favicons.sqlite")
 
@@ -96,6 +112,7 @@ class FirefoxBookMarks:
     def get_bookmark_list(self) -> list:
         """
         データベースファイルからブックマークのリストを取得する
+        Get bookmarks list from DB files
         """
         import sqlite3
         from contextlib import closing
@@ -128,6 +145,7 @@ class FirefoxBookMarks:
                             'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
             
             # ブックマークのデータをnamedtupleのlistとして取得
+            # Extracted bookmark data is converted to a list of namedtuples
             namtup = namedtuple("bookmark_item", [field[0] for field in cur.description])
             results = [namtup._make(row) for row in cur]
         
@@ -137,6 +155,7 @@ class FirefoxBookMarks:
     def clear_temp_files(self) -> None:
         """
         一時ディレクトリにコピーしたデータベースを消去する
+        Delete temp dir and DBs copied in it
         """
         rmtree(self.temp_dbdir)
 
@@ -160,8 +179,11 @@ class Plugin(QueryHandler):
     def initialize(self):
         """
         プラグイン読み込み時にプラグインの設定とブックマークのデータを取得
+        Get configurations and bookmark data when the plugin is activated
         """
 
+        # 設定の読み込み
+        # Read configurations from firefoxbookmark.conf
         cfile = str(Path(__file__).resolve().parent) + "/firefoxbookmark.conf"
         config = RawConfigParser()
         config.read(cfile)
@@ -184,13 +206,17 @@ class Plugin(QueryHandler):
             self.ckey = "0"
             info("FirefoxBookmarks: Config use_keyword not defined. Fallback = False.")
 
+
+        # ブックマークの取得
+        # Get bookmarks
         firefoxbookmarks = FirefoxBookMarks()
         firefoxbookmarks.fetch_database(self.cdir, self.cfav)
         self.bookmarks_list = firefoxbookmarks.get_bookmark_list()
         info(f"Firefox Bookmarks: {str(len(self.bookmarks_list))} items indexed.")
         firefoxbookmarks.clear_temp_files()
 
-        #データベースから読み込んだfaviconを一時ファイルに書き出し
+        # データベースから読み込んだfaviconを一時ファイルに書き出し
+        # Write extracted favicons to temp files
         self.favicon_dir = mkdtemp()
         if self.cfav == "1":
             for item_num, bookmark_item in enumerate(self.bookmarks_list):
@@ -203,6 +229,7 @@ class Plugin(QueryHandler):
     def finalize(self):
         """
         終了時、書き出したfaviconの一時ファイルを削除
+        Delete favicons copied to temp files when deactivating the plugin
         """
         rmtree(self.favicon_dir)
 
