@@ -13,8 +13,8 @@ from shutil import copyfile, rmtree
 from collections import namedtuple
 
 
-md_iid = "0.5"
-md_version = "0.2"
+md_iid = "1.0"
+md_version = "0.2.1"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
@@ -162,7 +162,7 @@ class FirefoxBookMarks:
         return None
 
 
-class Plugin(QueryHandler):
+class Plugin(TriggerQueryHandler):
 
     def id(self):
         return __name__
@@ -233,7 +233,7 @@ class Plugin(QueryHandler):
         """
         rmtree(self.favicon_dir)
 
-    def handleQuery(self, query):
+    def handleTriggerQuery(self, query):
         if not query.isValid:
             return
         
