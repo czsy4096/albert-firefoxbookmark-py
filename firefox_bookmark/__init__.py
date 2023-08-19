@@ -13,8 +13,8 @@ from shutil import copyfile, rmtree
 from collections import namedtuple
 
 
-md_iid = "1.0"
-md_version = "0.3"
+md_iid = "2.0"
+md_version = "0.4"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
@@ -162,28 +162,17 @@ class FirefoxBookMarks:
         return None
 
 
-class Plugin(TriggerQueryHandler):
+class Plugin(PluginInstance, TriggerQueryHandler):
 
-    def id(self):
-        return __name__
-    
-    def name(self):
-        return md_name
-
-    def description(self):
-        return md_description
-
-    def defaultTrigger(self):
-        return "f "
-
-    def initialize(self):
-        """
-        プラグイン読み込み時にプラグインの設定とブックマークのデータを取得
-        Get configurations and bookmark data when the plugin is activated
-        """
-
-        # 設定の読み込み
-        # Read configurations from firefoxbookmark.conf
+    def __init__(self):
+        TriggerQueryHandler.__init__(self,
+                                    id=__name__,
+                                    name=md_name,
+                                    description=md_description,
+                                    defaultTrigger="f ")
+        PluginInstance.__init__(self,
+                                extensions=[self])
+        
         cfile = str(Path(__file__).resolve().parent) + "/firefoxbookmark.conf"
         config = RawConfigParser()
         config.read(cfile)
@@ -224,7 +213,7 @@ class Plugin(TriggerQueryHandler):
                     ico = open(self.favicon_dir + "/favicon_" + str(item_num), "wb")
                     ico.write(bookmark_item.icondata)
                     ico.close()
-        
+
 
     def finalize(self):
         """
@@ -251,18 +240,18 @@ class Plugin(TriggerQueryHandler):
                 for word in query_words
                 ):
 
-                item = Item()
+                item = StandardItem()
                 item.id = "FirefoxBookmark_" + str(item_num)
                 item.text = str(bookmark_item.title)
                 item.subtext = str(bookmark_item.url)
-                item.completion = str(bookmark_item.title)
+                item.inputActionText = str(bookmark_item.title)
 
                 ifile = self.favicon_dir + "/favicon_" + str(item_num)
                 ipath = Path(ifile)
                 if ipath.is_file():
-                    item.icon = [ifile]
+                    item.iconUrls = ["file:" + ifile]
                 else:
-                    item.icon = ["xdg:firefox"]
+                    item.iconUrls = ["xdg:firefox"]
 
                 item.actions = [Action(
                     "open", "Open", lambda u = bookmark_item.url: openUrl(u)
