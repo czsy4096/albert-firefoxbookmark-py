@@ -13,13 +13,13 @@ from shutil import copyfile, rmtree
 from collections import namedtuple
 
 
-md_iid = "2.3"
-md_version = "0.5"
+md_iid = "2.5"
+md_version = "0.6"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
 md_url = "https://github.com/czsy4096/albert-firefoxbookmark-py"
-md_maintainers = "@czsy4096"
+md_authors = "@czsy4096"
 
 MAX_COUNT = 10
 
@@ -215,7 +215,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     ico.close()
 
 
-    def finalize(self):
+    def __del__(self):
         """
         終了時、書き出したfaviconの一時ファイルを削除
         Delete favicons copied to temp files when deactivating the plugin
