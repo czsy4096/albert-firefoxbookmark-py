@@ -13,8 +13,8 @@ from shutil import copyfile, rmtree
 from collections import namedtuple
 
 
-md_iid = "2.5"
-md_version = "0.6"
+md_iid = "3.0"
+md_version = "0.7"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
@@ -165,14 +165,9 @@ class FirefoxBookMarks:
 class Plugin(PluginInstance, TriggerQueryHandler):
 
     def __init__(self):
-        TriggerQueryHandler.__init__(self,
-                                    id=__name__,
-                                    name=md_name,
-                                    description=md_description,
-                                    defaultTrigger="f ")
-        PluginInstance.__init__(self,
-                                extensions=[self])
-        
+        TriggerQueryHandler.__init__(self)
+        PluginInstance.__init__(self)
+       
         cfile = str(Path(__file__).resolve().parent) + "/firefoxbookmark.conf"
         config = RawConfigParser()
         config.read(cfile)
@@ -221,6 +216,9 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         Delete favicons copied to temp files when deactivating the plugin
         """
         rmtree(self.favicon_dir)
+    
+    def defaultTrigger(self):
+        return 'f '
 
     def handleTriggerQuery(self, query):
         if not query.isValid:
