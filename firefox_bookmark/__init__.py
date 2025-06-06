@@ -122,26 +122,75 @@ class FirefoxBookMarks:
 
             if self.temp_favicondb_path.exists():
                 cur.execute(f'ATTACH DATABASE "{str(self.temp_favicondb_path)}" AS favicons')
-                cur.execute('SELECT bookmark.title, place.url, keywords.keyword, icon.data AS icondata '
-                            'FROM main.moz_bookmarks AS bookmark '
-                            'INNER JOIN main.moz_places AS place ON (bookmark.fk = place.id) '
-                            'LEFT JOIN main.moz_keywords AS keywords ON (place.id = keywords.place_id) '
-                            'LEFT JOIN favicons.moz_pages_w_icons AS iconpage ON (place.url = iconpage.page_url) '
-                            'LEFT JOIN favicons.moz_icons_to_pages AS iconid ON (iconpage.id = iconid.page_id) '
-                            'LEFT JOIN favicons.moz_icons AS icon ON (iconid.icon_id = icon.id) '
+                cur.execute('SELECT '
+                            'bookmark.title, place.url, keywords.keyword, icon.data AS icondata '
+
+                            'FROM '
+                            'main.moz_bookmarks AS bookmark '
+
+                            'INNER JOIN '
+                            'main.moz_places AS place '
+                            'ON (bookmark.fk = place.id) '
+
+                            'LEFT JOIN '
+                            'main.moz_keywords AS keywords '
+                            'ON (place.id = keywords.place_id) '
+
+                            'LEFT JOIN '
+                            'favicons.moz_pages_w_icons AS iconpage '
+                            'ON (place.url = iconpage.page_url) '
+
+                            'LEFT JOIN '
+                            'favicons.moz_icons_to_pages AS iconid '
+                            'ON (iconpage.id = iconid.page_id) '
+
+                            'LEFT JOIN '
+                            'favicons.moz_icons AS icon '
+                            'ON (iconid.icon_id = icon.id '
+
+                            'AND icon.id = ('
+                            'SELECT icon2.id '
+                            'FROM favicons.moz_icons AS icon2 '
+                            'INNER JOIN '
+                            'favicons.moz_icons_to_pages AS iconid2 '
+                            'ON (icon2.id = iconid2.icon_id) '
+                            'WHERE iconid2.page_id = iconid.page_id '
+                            'ORDER BY '
+                            'icon2.width DESC '
+                            'LIMIT 1'
+                            ') '
+
+                            ') '
+
                             'WHERE bookmark.type = 1 '
+
                             'AND place.url NOT LIKE "place:%" '
+
                             'GROUP BY bookmark.title, place.url '
+
                             'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
 
             else:
-                cur.execute('SELECT bookmark.title, place.url, keywords.keyword '
-                            'FROM moz_bookmarks AS bookmark '
-                            'INNER JOIN moz_places AS place ON (bookmark.fk = place.id) '
-                            'LEFT JOIN moz_keywords AS keywords ON (place.id = keywords.place_id) '
+                cur.execute('SELECT '
+                            'bookmark.title, place.url, keywords.keyword '
+
+                            'FROM '
+                            'moz_bookmarks AS bookmark '
+
+                            'INNER JOIN '
+                            'moz_places AS place '
+                            'ON (bookmark.fk = place.id) '
+
+                            'LEFT JOIN '
+                            'moz_keywords AS keywords '
+                            'ON (place.id = keywords.place_id) '
+
                             'WHERE bookmark.type = 1 '
+
                             'AND place.url NOT LIKE "place:%" '
+                            
                             'GROUP BY bookmark.title, place.url '
+                            
                             'ORDER BY place.last_visit_date DESC, bookmark.id ASC')
             
             # ブックマークのデータをnamedtupleのlistとして取得
