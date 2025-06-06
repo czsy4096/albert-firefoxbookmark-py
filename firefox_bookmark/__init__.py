@@ -14,7 +14,7 @@ from collections import namedtuple
 
 
 md_iid = "3.0"
-md_version = "0.7"
+md_version = "0.8"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
