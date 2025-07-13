@@ -14,12 +14,29 @@ from collections import namedtuple
 
 
 md_iid = "3.0"
-md_version = "0.8"
+md_version = "0.9"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
 md_url = "https://github.com/czsy4096/albert-firefoxbookmark-py"
 md_authors = "@czsy4096"
+md_lib_dependencies = ["pillow", "svgutils"]
+
+try:
+    from PIL import Image
+except ImportError:
+    IMP_IMG = False
+    warning("Failed to import pillow.")
+else:
+    IMP_IMG = True
+
+try:
+    from svgutils import transform as svgtf
+except ImportError:
+    IMP_SVG = False
+    warning("Failed to import svgutils.")
+else:
+    IMP_SVG = True
 
 MAX_COUNT = 10
 
@@ -251,13 +268,58 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         # データベースから読み込んだfaviconを一時ファイルに書き出し
         # Write extracted favicons to temp files
         self.favicon_dir = mkdtemp()
+
         if self.cfav == "1":
             for item_num, bookmark_item in enumerate(self.bookmarks_list):
                 if bookmark_item.icondata:
-                    ico = open(self.favicon_dir + "/favicon_" + str(item_num), "wb")
-                    ico.write(bookmark_item.icondata)
-                    ico.close()
+                    favicon_path = self.favicon_dir + "/favicon_" + str(item_num)
+                    with open(favicon_path, "wb") as ico:
+                        ico.write(bookmark_item.icondata)
 
+                    self.resize_ico(favicon_path)
+    
+    def resize_ico(self, favicon_path):
+        """
+        faviconを256x256にリサイズ
+        Resize favicons to 256x256
+        """
+        try:
+            with open(favicon_path, "rb") as fil:
+                head = fil.read(300)
+
+                # PNG
+                if head.startswith(b"\x89PNG"):
+                    if IMP_IMG == True:
+                        with Image.open(favicon_path) as img:
+                            if img.width == 256:
+                                return
+                    
+                            resized_img = img.resize((256, 256))
+                            resized_img.save(favicon_path, 'PNG', optimize=True)
+
+                    else:
+                        pass
+
+                # SVG
+                elif 'http://www.w3.org/2000/svg' in str(head):
+                    if IMP_SVG == True:
+                        img = svgtf.fromfile(favicon_path)
+
+                        if img.width == "256":
+                            return
+
+                        img.set_size(("256", "256"))
+                        img.save(favicon_path)
+
+                    else:
+                        pass
+
+                else:
+                    pass
+                    
+        except Exception:
+            pass
+                    
 
     def __del__(self):
         """
