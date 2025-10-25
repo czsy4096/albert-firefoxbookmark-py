@@ -13,15 +13,17 @@ from shutil import copyfile, rmtree
 from collections import namedtuple
 
 
-md_iid = "3.0"
-md_version = "0.9"
+md_iid = "4.0"
+md_version = "0.10"
 md_name = "Firefox Bookmarks"
 md_description = "Search Firefox bookmarks"
 md_license = "GPL-3.0"
 md_url = "https://github.com/czsy4096/albert-firefoxbookmark-py"
 md_authors = "@czsy4096"
-md_lib_dependencies = ["pillow", "svgutils"]
+# md_lib_dependencies = ["pillow", "svgutils"]
 
+"""
+昔に自分でアイコンをリサイズしていたときのコード
 try:
     from PIL import Image
 except ImportError:
@@ -37,6 +39,8 @@ except ImportError:
     warning("Failed to import svgutils.")
 else:
     IMP_SVG = True
+"""
+
 
 MAX_COUNT = 10
 
@@ -276,13 +280,14 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     with open(favicon_path, "wb") as ico:
                         ico.write(bookmark_item.icondata)
 
-                    self.resize_ico(favicon_path)
-    
+#                    self.resize_ico(favicon_path)
+
+    """    
     def resize_ico(self, favicon_path):
-        """
+        
         faviconを256x256にリサイズ
         Resize favicons to 256x256
-        """
+        
         try:
             with open(favicon_path, "rb") as fil:
                 head = fil.read(300)
@@ -319,7 +324,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     
         except Exception:
             pass
-                    
+    """                
 
     def __del__(self):
         """
@@ -353,14 +358,14 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 item.id = "FirefoxBookmark_" + str(item_num)
                 item.text = str(bookmark_item.title)
                 item.subtext = str(bookmark_item.url)
-                item.inputActionText = str(bookmark_item.title)
+                item.input_action_text = str(bookmark_item.title)
 
                 ifile = self.favicon_dir + "/favicon_" + str(item_num)
                 ipath = Path(ifile)
                 if ipath.is_file():
-                    item.iconUrls = ["file:" + ifile]
+                    item.icon_factory = lambda p = ipath: makeImageIcon(p)
                 else:
-                    item.iconUrls = ["xdg:firefox"]
+                    item.icon_factory = lambda: makeThemeIcon("firefox")
 
                 item.actions = [Action(
                     "open", "Open", lambda u = bookmark_item.url: openUrl(u)
