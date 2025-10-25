@@ -1,4 +1,8 @@
 # Albert用Firefoxブックマークプラグイン
+
+## 代替品があります!
+**Albertの公式リポジトリに [firefox用のpythonプラグイン](https://github.com/albertlauncher/albert-plugin-python-firefox) が追加されています。** このプラグインも一応は趣味でアップデート対応しますが、公式のプラグインのほうが明らかに出来が良いのでそちらを使用されることをおすすめします。
+
 ## これは何?
 Linux用キーボードランチャーである [Albert](https://albertlauncher.github.io/) でFirefoxのブックマークを検索するためのプラグインです。Albert v0.18の大規模アップデートにより公式の(C++)プラグインが使用できなくなり、メンテナーもいないため、pythonプラグインとしてDIYしたものです。
 

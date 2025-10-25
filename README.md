@@ -1,4 +1,8 @@
 # Firefox bookmarks plugin for Albert
+
+## IMPORTANT: There is a better alternative!
+Now official Albert repository has [python plugin for firefox](https://github.com/albertlauncher/albert-plugin-python-firefox). The official one is much better than this one and I reccommend to use the official one.
+
 ## What is this?
 This is a python plugin for [Albert](https://albertlauncher.github.io/), a keyboard application launcher for Linux, to search and access to your Firefox bookmarks. I made this for my personal use because the update to Albert v0.18 broke the official (C++) Firefox bookmarks plugin.
 
